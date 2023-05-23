@@ -1,0 +1,100 @@
+###########################
+# Input Schema for Dgraph #
+###########################
+
+type Ingredient {
+    id: ID!
+    name: String! @id
+    tags: [Tag]
+    recipe: [Recipe]
+}
+
+type IngredientStock {
+    id: ID!
+    ingredient: Ingredient!
+    quantity: Float
+    unit: Unit
+    isLow: Boolean
+}
+
+type IngredientRequirement {
+    id: ID!
+    ingredient: Ingredient!
+    quantity: Float!
+    unit: Unit!
+}
+
+type Equipment {
+    id: ID!
+    name: String! @id
+    description: String
+}
+
+type EquipmentRequirement {
+    id: ID!
+    ingredient: Equipment!
+    quantity: Float
+}
+
+type Recipe {
+    id: ID!
+    name: String! @search
+    Steps: [Step]
+    tags: [Tag]
+}
+
+type Step {
+    id: ID!
+    stepType: StepType!
+    stepOrder: Int!
+    verbose: String!
+    terse: String
+    equipment: [EquipmentRequirement]
+    ingredients: [IngredientRequirement]
+    recipe: Recipe! @hasInverse(field: Steps)
+}
+
+enum StepType {
+    PREP
+    COOK
+    SERVE
+}
+
+type ShoppingList {
+    id: ID!
+    name: String! @id
+    createdDate: String!
+    item: [ShoppingListItem!]! @hasInverse(field: shoppingList)
+}
+
+type ShoppingListItem {
+    id: ID!
+    ingredientRequirement: IngredientRequirement!
+    isPurchased: Boolean!
+    shoppingList: ShoppingList! @hasInverse(field: item)
+}
+
+type Tag {
+    id: ID!
+    name: String! @search
+    type: TagType
+}
+
+enum TagType {
+    INGREDIENT
+    RECIPE
+    SHOPPINGLIST
+}
+
+enum Unit {
+    GRAMS
+    KILOGRAMS
+    MILLILITRES
+    LITRES
+    TEASPOONS
+    TABLESPOONS
+    CUPS
+    PIECES
+    ITEMS
+    SLICES
+}

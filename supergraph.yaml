@@ -1,0 +1,5 @@
+subgraphs:
+  reside:
+    routing_url: http://localhost:8080/graphql
+    schema:
+      file: ./subgraphs/schema.graphql
