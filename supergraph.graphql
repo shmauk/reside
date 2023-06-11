@@ -1,24 +1,24 @@
 schema
-  @core(feature: "https://specs.apollo.dev/core/v0.1"),
-  @core(feature: "https://specs.apollo.dev/join/v0.1")
+  @core(feature: "https://specs.apollo.dev/core/v0.2"),
+  @core(feature: "https://specs.apollo.dev/join/v0.1", for: EXECUTION)
 {
   query: Query
   mutation: Mutation
 }
 
-directive @core(feature: String!) repeatable on SCHEMA
-
-directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet) on FIELD_DEFINITION
-
-directive @join__type(graph: join__Graph!, key: join__FieldSet) repeatable on OBJECT | INTERFACE
-
-directive @join__owner(graph: join__Graph!) on OBJECT | INTERFACE
-
-directive @join__graph(name: String!, url: String!) on ENUM_VALUE
-
 directive @cacheControl(maxAge: Int!) on QUERY
 
 directive @cascade(fields: [String]) on FIELD
+
+directive @core(as: String, feature: String!, for: core__Purpose) repeatable on SCHEMA
+
+directive @join__field(graph: join__Graph, provides: join__FieldSet, requires: join__FieldSet) on FIELD_DEFINITION
+
+directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+directive @join__owner(graph: join__Graph!) on INTERFACE | OBJECT
+
+directive @join__type(graph: join__Graph!, key: join__FieldSet) repeatable on INTERFACE | OBJECT
 
 input AddEquipmentInput {
   description: String
@@ -44,7 +44,7 @@ input AddIngredientInput {
   defaultLocation: StorageLocationRef
   name: String!
   recipe: [RecipeRef]
-  tags: [TagRef]
+  tags: [RecipeTagRef]
 }
 
 type AddIngredientPayload {
@@ -77,12 +77,21 @@ type AddIngredientStockPayload {
   numUids: Int
 }
 
+input AddIngredientTagInput {
+  name: String!
+}
+
+type AddIngredientTagPayload {
+  ingredientTag(filter: IngredientTagFilter, first: Int, offset: Int, order: IngredientTagOrder): [IngredientTag]
+  numUids: Int
+}
+
 input AddRecipeInput {
   Steps: [StepRef]
   description: String
   name: String!
   photo: String
-  tags: [TagRef]
+  tags: [RecipeTagRef]
 }
 
 type AddRecipePayload {
@@ -90,11 +99,20 @@ type AddRecipePayload {
   recipe(filter: RecipeFilter, first: Int, offset: Int, order: RecipeOrder): [Recipe]
 }
 
+input AddRecipeTagInput {
+  name: String!
+}
+
+type AddRecipeTagPayload {
+  numUids: Int
+  recipeTag(filter: RecipeTagFilter, first: Int, offset: Int, order: RecipeTagOrder): [RecipeTag]
+}
+
 input AddShoppingListInput {
   createdDate: String!
   item: [ShoppingListItemRef!]!
   name: String!
-  tags: [TagRef]
+  tags: [ShoppingListTagRef]
 }
 
 input AddShoppingListItemInput {
@@ -111,6 +129,15 @@ type AddShoppingListItemPayload {
 type AddShoppingListPayload {
   numUids: Int
   shoppingList(filter: ShoppingListFilter, first: Int, offset: Int, order: ShoppingListOrder): [ShoppingList]
+}
+
+input AddShoppingListTagInput {
+  name: String!
+}
+
+type AddShoppingListTagPayload {
+  numUids: Int
+  shoppingListTag(filter: ShoppingListTagFilter, first: Int, offset: Int, order: ShoppingListTagOrder): [ShoppingListTag]
 }
 
 input AddStepInput {
@@ -139,16 +166,6 @@ input AddStorageLocationInput {
 type AddStorageLocationPayload {
   numUids: Int
   storageLocation(filter: StorageLocationFilter, first: Int, offset: Int, order: StorageLocationOrder): [StorageLocation]
-}
-
-input AddTagInput {
-  name: String!
-  type: TagType!
-}
-
-type AddTagPayload {
-  numUids: Int
-  tag(filter: TagFilter, first: Int, offset: Int, order: TagOrder): [Tag]
 }
 
 input AuthRule {
@@ -226,10 +243,22 @@ type DeleteIngredientStockPayload {
   numUids: Int
 }
 
+type DeleteIngredientTagPayload {
+  ingredientTag(filter: IngredientTagFilter, first: Int, offset: Int, order: IngredientTagOrder): [IngredientTag]
+  msg: String
+  numUids: Int
+}
+
 type DeleteRecipePayload {
   msg: String
   numUids: Int
   recipe(filter: RecipeFilter, first: Int, offset: Int, order: RecipeOrder): [Recipe]
+}
+
+type DeleteRecipeTagPayload {
+  msg: String
+  numUids: Int
+  recipeTag(filter: RecipeTagFilter, first: Int, offset: Int, order: RecipeTagOrder): [RecipeTag]
 }
 
 type DeleteShoppingListItemPayload {
@@ -244,6 +273,12 @@ type DeleteShoppingListPayload {
   shoppingList(filter: ShoppingListFilter, first: Int, offset: Int, order: ShoppingListOrder): [ShoppingList]
 }
 
+type DeleteShoppingListTagPayload {
+  msg: String
+  numUids: Int
+  shoppingListTag(filter: ShoppingListTagFilter, first: Int, offset: Int, order: ShoppingListTagOrder): [ShoppingListTag]
+}
+
 type DeleteStepPayload {
   msg: String
   numUids: Int
@@ -254,12 +289,6 @@ type DeleteStorageLocationPayload {
   msg: String
   numUids: Int
   storageLocation(filter: StorageLocationFilter, first: Int, offset: Int, order: StorageLocationOrder): [StorageLocation]
-}
-
-type DeleteTagPayload {
-  msg: String
-  numUids: Int
-  tag(filter: TagFilter, first: Int, offset: Int, order: TagOrder): [Tag]
 }
 
 enum DgraphIndex {
@@ -419,8 +448,8 @@ type Ingredient {
   name: String!
   recipe(filter: RecipeFilter, first: Int, offset: Int, order: RecipeOrder): [Recipe]
   recipeAggregate(filter: RecipeFilter): RecipeAggregateResult
-  tags(filter: TagFilter, first: Int, offset: Int, order: TagOrder): [Tag]
-  tagsAggregate(filter: TagFilter): TagAggregateResult
+  tags(filter: RecipeTagFilter, first: Int, offset: Int, order: RecipeTagOrder): [RecipeTag]
+  tagsAggregate(filter: RecipeTagFilter): RecipeTagAggregateResult
 }
 
 type IngredientAggregateResult {
@@ -458,7 +487,7 @@ enum IngredientOrderable {
 input IngredientPatch {
   defaultLocation: StorageLocationRef
   recipe: [RecipeRef]
-  tags: [TagRef]
+  tags: [RecipeTagRef]
 }
 
 input IngredientRef {
@@ -466,7 +495,7 @@ input IngredientRef {
   id: ID
   name: String
   recipe: [RecipeRef]
-  tags: [TagRef]
+  tags: [RecipeTagRef]
 }
 
 type IngredientRequirement {
@@ -585,6 +614,49 @@ input IngredientStockRef {
   unit: Unit
 }
 
+type IngredientTag {
+  id: ID!
+  name: String!
+}
+
+type IngredientTagAggregateResult {
+  count: Int
+  nameMax: String
+  nameMin: String
+}
+
+input IngredientTagFilter {
+  and: [IngredientTagFilter]
+  has: [IngredientTagHasFilter]
+  id: [ID!]
+  name: StringTermFilter
+  not: IngredientTagFilter
+  or: [IngredientTagFilter]
+}
+
+enum IngredientTagHasFilter {
+  name
+}
+
+input IngredientTagOrder {
+  asc: IngredientTagOrderable
+  desc: IngredientTagOrderable
+  then: IngredientTagOrder
+}
+
+enum IngredientTagOrderable {
+  name
+}
+
+input IngredientTagPatch {
+  name: String
+}
+
+input IngredientTagRef {
+  id: ID
+  name: String
+}
+
 """
 The Int64 scalar type represents a signed 64‐bit numeric non‐fractional value.
 Int64 can represent values in range [-(2^63),(2^63 - 1)].
@@ -606,11 +678,6 @@ input Int64Range {
   min: Int64!
 }
 
-input IntersectsFilter {
-  multiPolygon: MultiPolygonRef
-  polygon: PolygonRef
-}
-
 input IntFilter {
   between: IntRange
   eq: Int
@@ -626,11 +693,9 @@ input IntRange {
   min: Int!
 }
 
-scalar join__FieldSet
-
-enum join__Graph {
-  RESIDE @join__graph(name: "reside" url: "http://localhost:8080/graphql")
-  RESTOCKY @join__graph(name: "restocky" url: "http://localhost:4001/query")
+input IntersectsFilter {
+  multiPolygon: MultiPolygonRef
+  polygon: PolygonRef
 }
 
 enum Mode {
@@ -652,35 +717,41 @@ type Mutation {
   addIngredient(input: [AddIngredientInput!]!, upsert: Boolean): AddIngredientPayload @join__field(graph: RESIDE)
   addIngredientRequirement(input: [AddIngredientRequirementInput!]!): AddIngredientRequirementPayload @join__field(graph: RESIDE)
   addIngredientStock(input: [AddIngredientStockInput!]!): AddIngredientStockPayload @join__field(graph: RESIDE)
+  addIngredientTag(input: [AddIngredientTagInput!]!): AddIngredientTagPayload @join__field(graph: RESIDE)
   addRecipe(input: [AddRecipeInput!]!): AddRecipePayload @join__field(graph: RESIDE)
+  addRecipeTag(input: [AddRecipeTagInput!]!): AddRecipeTagPayload @join__field(graph: RESIDE)
   addShoppingList(input: [AddShoppingListInput!]!, upsert: Boolean): AddShoppingListPayload @join__field(graph: RESIDE)
   addShoppingListItem(input: [AddShoppingListItemInput!]!): AddShoppingListItemPayload @join__field(graph: RESIDE)
+  addShoppingListTag(input: [AddShoppingListTagInput!]!): AddShoppingListTagPayload @join__field(graph: RESIDE)
   addStep(input: [AddStepInput!]!): AddStepPayload @join__field(graph: RESIDE)
   addStorageLocation(input: [AddStorageLocationInput!]!, upsert: Boolean): AddStorageLocationPayload @join__field(graph: RESIDE)
-  addTag(input: [AddTagInput!]!): AddTagPayload @join__field(graph: RESIDE)
   deleteEquipment(filter: EquipmentFilter!): DeleteEquipmentPayload @join__field(graph: RESIDE)
   deleteEquipmentRequirement(filter: EquipmentRequirementFilter!): DeleteEquipmentRequirementPayload @join__field(graph: RESIDE)
   deleteIngredient(filter: IngredientFilter!): DeleteIngredientPayload @join__field(graph: RESIDE)
   deleteIngredientRequirement(filter: IngredientRequirementFilter!): DeleteIngredientRequirementPayload @join__field(graph: RESIDE)
   deleteIngredientStock(filter: IngredientStockFilter!): DeleteIngredientStockPayload @join__field(graph: RESIDE)
+  deleteIngredientTag(filter: IngredientTagFilter!): DeleteIngredientTagPayload @join__field(graph: RESIDE)
   deleteRecipe(filter: RecipeFilter!): DeleteRecipePayload @join__field(graph: RESIDE)
+  deleteRecipeTag(filter: RecipeTagFilter!): DeleteRecipeTagPayload @join__field(graph: RESIDE)
   deleteShoppingList(filter: ShoppingListFilter!): DeleteShoppingListPayload @join__field(graph: RESIDE)
   deleteShoppingListItem(filter: ShoppingListItemFilter!): DeleteShoppingListItemPayload @join__field(graph: RESIDE)
+  deleteShoppingListTag(filter: ShoppingListTagFilter!): DeleteShoppingListTagPayload @join__field(graph: RESIDE)
   deleteStep(filter: StepFilter!): DeleteStepPayload @join__field(graph: RESIDE)
   deleteStorageLocation(filter: StorageLocationFilter!): DeleteStorageLocationPayload @join__field(graph: RESIDE)
-  deleteTag(filter: TagFilter!): DeleteTagPayload @join__field(graph: RESIDE)
   shoppingListFromLowStock(shoppingList: ExtShoppingListRef): String @join__field(graph: RESTOCKY)
   updateEquipment(input: UpdateEquipmentInput!): UpdateEquipmentPayload @join__field(graph: RESIDE)
   updateEquipmentRequirement(input: UpdateEquipmentRequirementInput!): UpdateEquipmentRequirementPayload @join__field(graph: RESIDE)
   updateIngredient(input: UpdateIngredientInput!): UpdateIngredientPayload @join__field(graph: RESIDE)
   updateIngredientRequirement(input: UpdateIngredientRequirementInput!): UpdateIngredientRequirementPayload @join__field(graph: RESIDE)
   updateIngredientStock(input: UpdateIngredientStockInput!): UpdateIngredientStockPayload @join__field(graph: RESIDE)
+  updateIngredientTag(input: UpdateIngredientTagInput!): UpdateIngredientTagPayload @join__field(graph: RESIDE)
   updateRecipe(input: UpdateRecipeInput!): UpdateRecipePayload @join__field(graph: RESIDE)
+  updateRecipeTag(input: UpdateRecipeTagInput!): UpdateRecipeTagPayload @join__field(graph: RESIDE)
   updateShoppingList(input: UpdateShoppingListInput!): UpdateShoppingListPayload @join__field(graph: RESIDE)
   updateShoppingListItem(input: UpdateShoppingListItemInput!): UpdateShoppingListItemPayload @join__field(graph: RESIDE)
+  updateShoppingListTag(input: UpdateShoppingListTagInput!): UpdateShoppingListTagPayload @join__field(graph: RESIDE)
   updateStep(input: UpdateStepInput!): UpdateStepPayload @join__field(graph: RESIDE)
   updateStorageLocation(input: UpdateStorageLocationInput!): UpdateStorageLocationPayload @join__field(graph: RESIDE)
-  updateTag(input: UpdateTagInput!): UpdateTagPayload @join__field(graph: RESIDE)
 }
 
 input NearFilter {
@@ -732,36 +803,42 @@ type Query {
   aggregateIngredient(filter: IngredientFilter): IngredientAggregateResult @join__field(graph: RESIDE)
   aggregateIngredientRequirement(filter: IngredientRequirementFilter): IngredientRequirementAggregateResult @join__field(graph: RESIDE)
   aggregateIngredientStock(filter: IngredientStockFilter): IngredientStockAggregateResult @join__field(graph: RESIDE)
+  aggregateIngredientTag(filter: IngredientTagFilter): IngredientTagAggregateResult @join__field(graph: RESIDE)
   aggregateRecipe(filter: RecipeFilter): RecipeAggregateResult @join__field(graph: RESIDE)
+  aggregateRecipeTag(filter: RecipeTagFilter): RecipeTagAggregateResult @join__field(graph: RESIDE)
   aggregateShoppingList(filter: ShoppingListFilter): ShoppingListAggregateResult @join__field(graph: RESIDE)
   aggregateShoppingListItem(filter: ShoppingListItemFilter): ShoppingListItemAggregateResult @join__field(graph: RESIDE)
+  aggregateShoppingListTag(filter: ShoppingListTagFilter): ShoppingListTagAggregateResult @join__field(graph: RESIDE)
   aggregateStep(filter: StepFilter): StepAggregateResult @join__field(graph: RESIDE)
   aggregateStorageLocation(filter: StorageLocationFilter): StorageLocationAggregateResult @join__field(graph: RESIDE)
-  aggregateTag(filter: TagFilter): TagAggregateResult @join__field(graph: RESIDE)
   generateQRCode(ingredient: ExtIngredientRef!): String @join__field(graph: RESTOCKY)
   getEquipment(id: ID, name: String): Equipment @join__field(graph: RESIDE)
   getEquipmentRequirement(id: ID!): EquipmentRequirement @join__field(graph: RESIDE)
   getIngredient(id: ID, name: String): Ingredient @join__field(graph: RESIDE)
   getIngredientRequirement(id: ID!): IngredientRequirement @join__field(graph: RESIDE)
   getIngredientStock(id: ID!): IngredientStock @join__field(graph: RESIDE)
+  getIngredientTag(id: ID!): IngredientTag @join__field(graph: RESIDE)
   getRecipe(id: ID!): Recipe @join__field(graph: RESIDE)
+  getRecipeTag(id: ID!): RecipeTag @join__field(graph: RESIDE)
   getShoppingList(id: ID, name: String): ShoppingList @join__field(graph: RESIDE)
   getShoppingListItem(id: ID!): ShoppingListItem @join__field(graph: RESIDE)
+  getShoppingListTag(id: ID!): ShoppingListTag @join__field(graph: RESIDE)
   getStep(id: ID!): Step @join__field(graph: RESIDE)
   getStockOnHand(tag: [ExtTagRef]): String @join__field(graph: RESTOCKY)
   getStorageLocation(id: ID, name: String): StorageLocation @join__field(graph: RESIDE)
-  getTag(id: ID!): Tag @join__field(graph: RESIDE)
   queryEquipment(filter: EquipmentFilter, first: Int, offset: Int, order: EquipmentOrder): [Equipment] @join__field(graph: RESIDE)
   queryEquipmentRequirement(filter: EquipmentRequirementFilter, first: Int, offset: Int): [EquipmentRequirement] @join__field(graph: RESIDE)
   queryIngredient(filter: IngredientFilter, first: Int, offset: Int, order: IngredientOrder): [Ingredient] @join__field(graph: RESIDE)
   queryIngredientRequirement(filter: IngredientRequirementFilter, first: Int, offset: Int, order: IngredientRequirementOrder): [IngredientRequirement] @join__field(graph: RESIDE)
   queryIngredientStock(filter: IngredientStockFilter, first: Int, offset: Int, order: IngredientStockOrder): [IngredientStock] @join__field(graph: RESIDE)
+  queryIngredientTag(filter: IngredientTagFilter, first: Int, offset: Int, order: IngredientTagOrder): [IngredientTag] @join__field(graph: RESIDE)
   queryRecipe(filter: RecipeFilter, first: Int, offset: Int, order: RecipeOrder): [Recipe] @join__field(graph: RESIDE)
+  queryRecipeTag(filter: RecipeTagFilter, first: Int, offset: Int, order: RecipeTagOrder): [RecipeTag] @join__field(graph: RESIDE)
   queryShoppingList(filter: ShoppingListFilter, first: Int, offset: Int, order: ShoppingListOrder): [ShoppingList] @join__field(graph: RESIDE)
   queryShoppingListItem(filter: ShoppingListItemFilter, first: Int, offset: Int): [ShoppingListItem] @join__field(graph: RESIDE)
+  queryShoppingListTag(filter: ShoppingListTagFilter, first: Int, offset: Int, order: ShoppingListTagOrder): [ShoppingListTag] @join__field(graph: RESIDE)
   queryStep(filter: StepFilter, first: Int, offset: Int, order: StepOrder): [Step] @join__field(graph: RESIDE)
   queryStorageLocation(filter: StorageLocationFilter, first: Int, offset: Int, order: StorageLocationOrder): [StorageLocation] @join__field(graph: RESIDE)
-  queryTag(filter: TagFilter, first: Int, offset: Int, order: TagOrder): [Tag] @join__field(graph: RESIDE)
 }
 
 type Recipe {
@@ -771,8 +848,8 @@ type Recipe {
   id: ID!
   name: String!
   photo: String
-  tags(filter: TagFilter, first: Int, offset: Int, order: TagOrder): [Tag]
-  tagsAggregate(filter: TagFilter): TagAggregateResult
+  tags(filter: RecipeTagFilter, first: Int, offset: Int, order: RecipeTagOrder): [RecipeTag]
+  tagsAggregate(filter: RecipeTagFilter): RecipeTagAggregateResult
 }
 
 type RecipeAggregateResult {
@@ -819,7 +896,7 @@ input RecipePatch {
   description: String
   name: String
   photo: String
-  tags: [TagRef]
+  tags: [RecipeTagRef]
 }
 
 input RecipeRef {
@@ -828,7 +905,50 @@ input RecipeRef {
   id: ID
   name: String
   photo: String
-  tags: [TagRef]
+  tags: [RecipeTagRef]
+}
+
+type RecipeTag {
+  id: ID!
+  name: String!
+}
+
+type RecipeTagAggregateResult {
+  count: Int
+  nameMax: String
+  nameMin: String
+}
+
+input RecipeTagFilter {
+  and: [RecipeTagFilter]
+  has: [RecipeTagHasFilter]
+  id: [ID!]
+  name: StringTermFilter
+  not: RecipeTagFilter
+  or: [RecipeTagFilter]
+}
+
+enum RecipeTagHasFilter {
+  name
+}
+
+input RecipeTagOrder {
+  asc: RecipeTagOrderable
+  desc: RecipeTagOrderable
+  then: RecipeTagOrder
+}
+
+enum RecipeTagOrderable {
+  name
+}
+
+input RecipeTagPatch {
+  name: String
+}
+
+input RecipeTagRef {
+  id: ID
+  name: String
 }
 
 type ShoppingList {
@@ -837,8 +957,8 @@ type ShoppingList {
   item(filter: ShoppingListItemFilter, first: Int, offset: Int): [ShoppingListItem!]!
   itemAggregate(filter: ShoppingListItemFilter): ShoppingListItemAggregateResult
   name: String!
-  tags(filter: TagFilter, first: Int, offset: Int, order: TagOrder): [Tag]
-  tagsAggregate(filter: TagFilter): TagAggregateResult
+  tags(filter: ShoppingListTagFilter, first: Int, offset: Int, order: ShoppingListTagOrder): [ShoppingListTag]
+  tagsAggregate(filter: ShoppingListTagFilter): ShoppingListTagAggregateResult
 }
 
 type ShoppingListAggregateResult {
@@ -917,7 +1037,7 @@ enum ShoppingListOrderable {
 input ShoppingListPatch {
   createdDate: String
   item: [ShoppingListItemRef!]
-  tags: [TagRef]
+  tags: [ShoppingListTagRef]
 }
 
 input ShoppingListRef {
@@ -925,7 +1045,50 @@ input ShoppingListRef {
   id: ID
   item: [ShoppingListItemRef!]
   name: String
-  tags: [TagRef]
+  tags: [ShoppingListTagRef]
+}
+
+type ShoppingListTag {
+  id: ID!
+  name: String!
+}
+
+type ShoppingListTagAggregateResult {
+  count: Int
+  nameMax: String
+  nameMin: String
+}
+
+input ShoppingListTagFilter {
+  and: [ShoppingListTagFilter]
+  has: [ShoppingListTagHasFilter]
+  id: [ID!]
+  name: StringTermFilter
+  not: ShoppingListTagFilter
+  or: [ShoppingListTagFilter]
+}
+
+enum ShoppingListTagHasFilter {
+  name
+}
+
+input ShoppingListTagOrder {
+  asc: ShoppingListTagOrderable
+  desc: ShoppingListTagOrderable
+  then: ShoppingListTagOrder
+}
+
+enum ShoppingListTagOrderable {
+  name
+}
+
+input ShoppingListTagPatch {
+  name: String
+}
+
+input ShoppingListTagRef {
+  id: ID
+  name: String
 }
 
 type Step {
@@ -1112,60 +1275,6 @@ input StringTermFilter {
   anyofterms: String
 }
 
-type Tag {
-  id: ID!
-  name: String!
-  type: TagType!
-}
-
-type TagAggregateResult {
-  count: Int
-  nameMax: String
-  nameMin: String
-}
-
-input TagFilter {
-  and: [TagFilter]
-  has: [TagHasFilter]
-  id: [ID!]
-  name: StringTermFilter
-  not: TagFilter
-  or: [TagFilter]
-}
-
-enum TagHasFilter {
-  name
-  type
-}
-
-input TagOrder {
-  asc: TagOrderable
-  desc: TagOrderable
-  then: TagOrder
-}
-
-enum TagOrderable {
-  name
-}
-
-input TagPatch {
-  name: String
-  type: TagType
-}
-
-input TagRef {
-  id: ID
-  name: String
-  type: TagType
-}
-
-enum TagType {
-  INGREDIENT
-  RECIPE
-  SHOPPINGLIST
-  UNIVERSAL
-}
-
 enum Unit {
   CUPS
   GRAMS
@@ -1234,6 +1343,17 @@ type UpdateIngredientStockPayload {
   numUids: Int
 }
 
+input UpdateIngredientTagInput {
+  filter: IngredientTagFilter!
+  remove: IngredientTagPatch
+  set: IngredientTagPatch
+}
+
+type UpdateIngredientTagPayload {
+  ingredientTag(filter: IngredientTagFilter, first: Int, offset: Int, order: IngredientTagOrder): [IngredientTag]
+  numUids: Int
+}
+
 input UpdateRecipeInput {
   filter: RecipeFilter!
   remove: RecipePatch
@@ -1243,6 +1363,17 @@ input UpdateRecipeInput {
 type UpdateRecipePayload {
   numUids: Int
   recipe(filter: RecipeFilter, first: Int, offset: Int, order: RecipeOrder): [Recipe]
+}
+
+input UpdateRecipeTagInput {
+  filter: RecipeTagFilter!
+  remove: RecipeTagPatch
+  set: RecipeTagPatch
+}
+
+type UpdateRecipeTagPayload {
+  numUids: Int
+  recipeTag(filter: RecipeTagFilter, first: Int, offset: Int, order: RecipeTagOrder): [RecipeTag]
 }
 
 input UpdateShoppingListInput {
@@ -1267,6 +1398,17 @@ type UpdateShoppingListPayload {
   shoppingList(filter: ShoppingListFilter, first: Int, offset: Int, order: ShoppingListOrder): [ShoppingList]
 }
 
+input UpdateShoppingListTagInput {
+  filter: ShoppingListTagFilter!
+  remove: ShoppingListTagPatch
+  set: ShoppingListTagPatch
+}
+
+type UpdateShoppingListTagPayload {
+  numUids: Int
+  shoppingListTag(filter: ShoppingListTagFilter, first: Int, offset: Int, order: ShoppingListTagOrder): [ShoppingListTag]
+}
+
 input UpdateStepInput {
   filter: StepFilter!
   remove: StepPatch
@@ -1289,17 +1431,26 @@ type UpdateStorageLocationPayload {
   storageLocation(filter: StorageLocationFilter, first: Int, offset: Int, order: StorageLocationOrder): [StorageLocation]
 }
 
-input UpdateTagInput {
-  filter: TagFilter!
-  remove: TagPatch
-  set: TagPatch
-}
-
-type UpdateTagPayload {
-  numUids: Int
-  tag(filter: TagFilter, first: Int, offset: Int, order: TagOrder): [Tag]
-}
-
 input WithinFilter {
   polygon: PolygonRef!
 }
+
+enum core__Purpose {
+  """
+  `EXECUTION` features provide metadata necessary to for operation execution.
+  """
+  EXECUTION
+
+  """
+  `SECURITY` features provide metadata necessary to securely resolve fields.
+  """
+  SECURITY
+}
+
+scalar join__FieldSet
+
+enum join__Graph {
+  RESIDE @join__graph(name: "reside" url: "http://localhost:8080/graphql")
+  RESTOCKY @join__graph(name: "restocky" url: "http://localhost:4001/query")
+}
+

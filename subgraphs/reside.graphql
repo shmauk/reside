@@ -22,7 +22,7 @@ type IngredientStock {
 type StorageLocation {
     id: ID!
     name: String! @id
-    parent: StorageLocation
+    parent: StorageLocation @hasInverse(field: children)
     children: [StorageLocation]
     storageLevel: StorageLevel
     contents: [IngredientStock]
