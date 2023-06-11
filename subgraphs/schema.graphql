@@ -5,10 +5,10 @@
 type Ingredient {
     id: ID!
     name: String! @id
-    tags(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
+    tags(filter: RecipeTagFilter, order: RecipeTagOrder, first: Int, offset: Int): [RecipeTag]
     recipe(filter: RecipeFilter, order: RecipeOrder, first: Int, offset: Int): [Recipe]
     defaultLocation(filter: StorageLocationFilter): StorageLocation
-    tagsAggregate(filter: TagFilter): TagAggregateResult
+    tagsAggregate(filter: RecipeTagFilter): RecipeTagAggregateResult
     recipeAggregate(filter: RecipeFilter): RecipeAggregateResult
 }
 
@@ -65,10 +65,10 @@ type Recipe {
     name: String! @search
     description: String
     Steps(filter: StepFilter, order: StepOrder, first: Int, offset: Int): [Step] @hasInverse(field: recipe)
-    tags(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
+    tags(filter: RecipeTagFilter, order: RecipeTagOrder, first: Int, offset: Int): [RecipeTag]
     photo: String
     StepsAggregate(filter: StepFilter): StepAggregateResult
-    tagsAggregate(filter: TagFilter): TagAggregateResult
+    tagsAggregate(filter: RecipeTagFilter): RecipeTagAggregateResult
 }
 
 type Step {
@@ -95,9 +95,9 @@ type ShoppingList {
     name: String! @id
     createdDate: String!
     item(filter: ShoppingListItemFilter, first: Int, offset: Int): [ShoppingListItem!]! @hasInverse(field: shoppingList)
-    tags(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
+    tags(filter: ShoppingListTagFilter, order: ShoppingListTagOrder, first: Int, offset: Int): [ShoppingListTag]
     itemAggregate(filter: ShoppingListItemFilter): ShoppingListItemAggregateResult
-    tagsAggregate(filter: TagFilter): TagAggregateResult
+    tagsAggregate(filter: ShoppingListTagFilter): ShoppingListTagAggregateResult
 }
 
 type ShoppingListItem {
@@ -107,17 +107,19 @@ type ShoppingListItem {
     shoppingList(filter: ShoppingListFilter): ShoppingList! @hasInverse(field: item)
 }
 
-type Tag {
+type IngredientTag {
     id: ID!
     name: String! @search
-    type: TagType!
 }
 
-enum TagType {
-    INGREDIENT
-    RECIPE
-    SHOPPINGLIST
-    UNIVERSAL
+type RecipeTag {
+    id: ID!
+    name: String! @search
+}
+
+type ShoppingListTag {
+    id: ID!
+    name: String! @search
 }
 
 enum Unit {
@@ -424,8 +426,18 @@ type AddIngredientStockPayload {
     numUids: Int
 }
 
+type AddIngredientTagPayload {
+    ingredientTag(filter: IngredientTagFilter, order: IngredientTagOrder, first: Int, offset: Int): [IngredientTag]
+    numUids: Int
+}
+
 type AddRecipePayload {
     recipe(filter: RecipeFilter, order: RecipeOrder, first: Int, offset: Int): [Recipe]
+    numUids: Int
+}
+
+type AddRecipeTagPayload {
+    recipeTag(filter: RecipeTagFilter, order: RecipeTagOrder, first: Int, offset: Int): [RecipeTag]
     numUids: Int
 }
 
@@ -439,6 +451,11 @@ type AddShoppingListPayload {
     numUids: Int
 }
 
+type AddShoppingListTagPayload {
+    shoppingListTag(filter: ShoppingListTagFilter, order: ShoppingListTagOrder, first: Int, offset: Int): [ShoppingListTag]
+    numUids: Int
+}
+
 type AddStepPayload {
     step(filter: StepFilter, order: StepOrder, first: Int, offset: Int): [Step]
     numUids: Int
@@ -446,11 +463,6 @@ type AddStepPayload {
 
 type AddStorageLocationPayload {
     storageLocation(filter: StorageLocationFilter, order: StorageLocationOrder, first: Int, offset: Int): [StorageLocation]
-    numUids: Int
-}
-
-type AddTagPayload {
-    tag(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
     numUids: Int
 }
 
@@ -484,8 +496,20 @@ type DeleteIngredientStockPayload {
     numUids: Int
 }
 
+type DeleteIngredientTagPayload {
+    ingredientTag(filter: IngredientTagFilter, order: IngredientTagOrder, first: Int, offset: Int): [IngredientTag]
+    msg: String
+    numUids: Int
+}
+
 type DeleteRecipePayload {
     recipe(filter: RecipeFilter, order: RecipeOrder, first: Int, offset: Int): [Recipe]
+    msg: String
+    numUids: Int
+}
+
+type DeleteRecipeTagPayload {
+    recipeTag(filter: RecipeTagFilter, order: RecipeTagOrder, first: Int, offset: Int): [RecipeTag]
     msg: String
     numUids: Int
 }
@@ -502,6 +526,12 @@ type DeleteShoppingListPayload {
     numUids: Int
 }
 
+type DeleteShoppingListTagPayload {
+    shoppingListTag(filter: ShoppingListTagFilter, order: ShoppingListTagOrder, first: Int, offset: Int): [ShoppingListTag]
+    msg: String
+    numUids: Int
+}
+
 type DeleteStepPayload {
     step(filter: StepFilter, order: StepOrder, first: Int, offset: Int): [Step]
     msg: String
@@ -510,12 +540,6 @@ type DeleteStepPayload {
 
 type DeleteStorageLocationPayload {
     storageLocation(filter: StorageLocationFilter, order: StorageLocationOrder, first: Int, offset: Int): [StorageLocation]
-    msg: String
-    numUids: Int
-}
-
-type DeleteTagPayload {
-    tag(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
     msg: String
     numUids: Int
 }
@@ -554,6 +578,12 @@ type IngredientStockAggregateResult {
     quantityAvg: Float
 }
 
+type IngredientTagAggregateResult {
+    count: Int
+    nameMin: String
+    nameMax: String
+}
+
 type RecipeAggregateResult {
     count: Int
     nameMin: String
@@ -562,6 +592,12 @@ type RecipeAggregateResult {
     descriptionMax: String
     photoMin: String
     photoMax: String
+}
+
+type RecipeTagAggregateResult {
+    count: Int
+    nameMin: String
+    nameMax: String
 }
 
 type ShoppingListAggregateResult {
@@ -574,6 +610,12 @@ type ShoppingListAggregateResult {
 
 type ShoppingListItemAggregateResult {
     count: Int
+}
+
+type ShoppingListTagAggregateResult {
+    count: Int
+    nameMin: String
+    nameMax: String
 }
 
 type StepAggregateResult {
@@ -589,12 +631,6 @@ type StepAggregateResult {
 }
 
 type StorageLocationAggregateResult {
-    count: Int
-    nameMin: String
-    nameMax: String
-}
-
-type TagAggregateResult {
     count: Int
     nameMin: String
     nameMax: String
@@ -625,8 +661,18 @@ type UpdateIngredientStockPayload {
     numUids: Int
 }
 
+type UpdateIngredientTagPayload {
+    ingredientTag(filter: IngredientTagFilter, order: IngredientTagOrder, first: Int, offset: Int): [IngredientTag]
+    numUids: Int
+}
+
 type UpdateRecipePayload {
     recipe(filter: RecipeFilter, order: RecipeOrder, first: Int, offset: Int): [Recipe]
+    numUids: Int
+}
+
+type UpdateRecipeTagPayload {
+    recipeTag(filter: RecipeTagFilter, order: RecipeTagOrder, first: Int, offset: Int): [RecipeTag]
     numUids: Int
 }
 
@@ -640,6 +686,11 @@ type UpdateShoppingListPayload {
     numUids: Int
 }
 
+type UpdateShoppingListTagPayload {
+    shoppingListTag(filter: ShoppingListTagFilter, order: ShoppingListTagOrder, first: Int, offset: Int): [ShoppingListTag]
+    numUids: Int
+}
+
 type UpdateStepPayload {
     step(filter: StepFilter, order: StepOrder, first: Int, offset: Int): [Step]
     numUids: Int
@@ -647,11 +698,6 @@ type UpdateStepPayload {
 
 type UpdateStorageLocationPayload {
     storageLocation(filter: StorageLocationFilter, order: StorageLocationOrder, first: Int, offset: Int): [StorageLocation]
-    numUids: Int
-}
-
-type UpdateTagPayload {
-    tag(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
     numUids: Int
 }
 
@@ -708,6 +754,14 @@ enum IngredientStockOrderable {
     quantity
 }
 
+enum IngredientTagHasFilter {
+    name
+}
+
+enum IngredientTagOrderable {
+    name
+}
+
 enum RecipeHasFilter {
     name
     description
@@ -720,6 +774,14 @@ enum RecipeOrderable {
     name
     description
     photo
+}
+
+enum RecipeTagHasFilter {
+    name
+}
+
+enum RecipeTagOrderable {
+    name
 }
 
 enum ShoppingListHasFilter {
@@ -738,6 +800,14 @@ enum ShoppingListItemHasFilter {
 enum ShoppingListOrderable {
     name
     createdDate
+}
+
+enum ShoppingListTagHasFilter {
+    name
+}
+
+enum ShoppingListTagOrderable {
+    name
 }
 
 enum StepHasFilter {
@@ -768,15 +838,6 @@ enum StorageLocationOrderable {
     name
 }
 
-enum TagHasFilter {
-    name
-    type
-}
-
-enum TagOrderable {
-    name
-}
-
 #######################
 # Generated Inputs
 #######################
@@ -793,7 +854,7 @@ input AddEquipmentRequirementInput {
 
 input AddIngredientInput {
     name: String!
-    tags: [TagRef]
+    tags: [RecipeTagRef]
     recipe: [RecipeRef]
     defaultLocation: StorageLocationRef
 }
@@ -813,25 +874,37 @@ input AddIngredientStockInput {
     location: StorageLocationRef
 }
 
+input AddIngredientTagInput {
+    name: String!
+}
+
 input AddRecipeInput {
     name: String!
     description: String
     Steps: [StepRef]
-    tags: [TagRef]
+    tags: [RecipeTagRef]
     photo: String
+}
+
+input AddRecipeTagInput {
+    name: String!
 }
 
 input AddShoppingListInput {
     name: String!
     createdDate: String!
     item: [ShoppingListItemRef!]!
-    tags: [TagRef]
+    tags: [ShoppingListTagRef]
 }
 
 input AddShoppingListItemInput {
     ingredientRequirement: IngredientRequirementRef!
     isPurchased: Boolean!
     shoppingList: ShoppingListRef!
+}
+
+input AddShoppingListTagInput {
+    name: String!
 }
 
 input AddStepInput {
@@ -850,11 +923,6 @@ input AddStorageLocationInput {
     children: [StorageLocationRef]
     storageLevel: StorageLevel
     contents: [IngredientStockRef]
-}
-
-input AddTagInput {
-    name: String!
-    type: TagType!
 }
 
 input EquipmentFilter {
@@ -917,7 +985,7 @@ input IngredientOrder {
 }
 
 input IngredientPatch {
-    tags: [TagRef]
+    tags: [RecipeTagRef]
     recipe: [RecipeRef]
     defaultLocation: StorageLocationRef
 }
@@ -925,7 +993,7 @@ input IngredientPatch {
 input IngredientRef {
     id: ID
     name: String
-    tags: [TagRef]
+    tags: [RecipeTagRef]
     recipe: [RecipeRef]
     defaultLocation: StorageLocationRef
 }
@@ -990,6 +1058,30 @@ input IngredientStockRef {
     location: StorageLocationRef
 }
 
+input IngredientTagFilter {
+    id: [ID!]
+    name: StringTermFilter
+    has: [IngredientTagHasFilter]
+    and: [IngredientTagFilter]
+    or: [IngredientTagFilter]
+    not: IngredientTagFilter
+}
+
+input IngredientTagOrder {
+    asc: IngredientTagOrderable
+    desc: IngredientTagOrderable
+    then: IngredientTagOrder
+}
+
+input IngredientTagPatch {
+    name: String
+}
+
+input IngredientTagRef {
+    id: ID
+    name: String
+}
+
 input RecipeFilter {
     id: [ID!]
     name: StringTermFilter
@@ -1009,7 +1101,7 @@ input RecipePatch {
     name: String
     description: String
     Steps: [StepRef]
-    tags: [TagRef]
+    tags: [RecipeTagRef]
     photo: String
 }
 
@@ -1018,8 +1110,32 @@ input RecipeRef {
     name: String
     description: String
     Steps: [StepRef]
-    tags: [TagRef]
+    tags: [RecipeTagRef]
     photo: String
+}
+
+input RecipeTagFilter {
+    id: [ID!]
+    name: StringTermFilter
+    has: [RecipeTagHasFilter]
+    and: [RecipeTagFilter]
+    or: [RecipeTagFilter]
+    not: RecipeTagFilter
+}
+
+input RecipeTagOrder {
+    asc: RecipeTagOrderable
+    desc: RecipeTagOrderable
+    then: RecipeTagOrder
+}
+
+input RecipeTagPatch {
+    name: String
+}
+
+input RecipeTagRef {
+    id: ID
+    name: String
 }
 
 input ShoppingListFilter {
@@ -1061,7 +1177,7 @@ input ShoppingListOrder {
 input ShoppingListPatch {
     createdDate: String
     item: [ShoppingListItemRef!]
-    tags: [TagRef]
+    tags: [ShoppingListTagRef]
 }
 
 input ShoppingListRef {
@@ -1069,7 +1185,31 @@ input ShoppingListRef {
     name: String
     createdDate: String
     item: [ShoppingListItemRef!]
-    tags: [TagRef]
+    tags: [ShoppingListTagRef]
+}
+
+input ShoppingListTagFilter {
+    id: [ID!]
+    name: StringTermFilter
+    has: [ShoppingListTagHasFilter]
+    and: [ShoppingListTagFilter]
+    or: [ShoppingListTagFilter]
+    not: ShoppingListTagFilter
+}
+
+input ShoppingListTagOrder {
+    asc: ShoppingListTagOrderable
+    desc: ShoppingListTagOrderable
+    then: ShoppingListTagOrder
+}
+
+input ShoppingListTagPatch {
+    name: String
+}
+
+input ShoppingListTagRef {
+    id: ID
+    name: String
 }
 
 input StepFilter {
@@ -1138,32 +1278,6 @@ input StorageLocationRef {
     contents: [IngredientStockRef]
 }
 
-input TagFilter {
-    id: [ID!]
-    name: StringTermFilter
-    has: [TagHasFilter]
-    and: [TagFilter]
-    or: [TagFilter]
-    not: TagFilter
-}
-
-input TagOrder {
-    asc: TagOrderable
-    desc: TagOrderable
-    then: TagOrder
-}
-
-input TagPatch {
-    name: String
-    type: TagType
-}
-
-input TagRef {
-    id: ID
-    name: String
-    type: TagType
-}
-
 input UpdateEquipmentInput {
     filter: EquipmentFilter!
     set: EquipmentPatch
@@ -1194,10 +1308,22 @@ input UpdateIngredientStockInput {
     remove: IngredientStockPatch
 }
 
+input UpdateIngredientTagInput {
+    filter: IngredientTagFilter!
+    set: IngredientTagPatch
+    remove: IngredientTagPatch
+}
+
 input UpdateRecipeInput {
     filter: RecipeFilter!
     set: RecipePatch
     remove: RecipePatch
+}
+
+input UpdateRecipeTagInput {
+    filter: RecipeTagFilter!
+    set: RecipeTagPatch
+    remove: RecipeTagPatch
 }
 
 input UpdateShoppingListInput {
@@ -1212,6 +1338,12 @@ input UpdateShoppingListItemInput {
     remove: ShoppingListItemPatch
 }
 
+input UpdateShoppingListTagInput {
+    filter: ShoppingListTagFilter!
+    set: ShoppingListTagPatch
+    remove: ShoppingListTagPatch
+}
+
 input UpdateStepInput {
     filter: StepFilter!
     set: StepPatch
@@ -1222,12 +1354,6 @@ input UpdateStorageLocationInput {
     filter: StorageLocationFilter!
     set: StorageLocationPatch
     remove: StorageLocationPatch
-}
-
-input UpdateTagInput {
-    filter: TagFilter!
-    set: TagPatch
-    remove: TagPatch
 }
 
 #######################
@@ -1265,9 +1391,15 @@ type Query {
     getShoppingListItem(id: ID!): ShoppingListItem
     queryShoppingListItem(filter: ShoppingListItemFilter, first: Int, offset: Int): [ShoppingListItem]
     aggregateShoppingListItem(filter: ShoppingListItemFilter): ShoppingListItemAggregateResult
-    getTag(id: ID!): Tag
-    queryTag(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
-    aggregateTag(filter: TagFilter): TagAggregateResult
+    getIngredientTag(id: ID!): IngredientTag
+    queryIngredientTag(filter: IngredientTagFilter, order: IngredientTagOrder, first: Int, offset: Int): [IngredientTag]
+    aggregateIngredientTag(filter: IngredientTagFilter): IngredientTagAggregateResult
+    getRecipeTag(id: ID!): RecipeTag
+    queryRecipeTag(filter: RecipeTagFilter, order: RecipeTagOrder, first: Int, offset: Int): [RecipeTag]
+    aggregateRecipeTag(filter: RecipeTagFilter): RecipeTagAggregateResult
+    getShoppingListTag(id: ID!): ShoppingListTag
+    queryShoppingListTag(filter: ShoppingListTagFilter, order: ShoppingListTagOrder, first: Int, offset: Int): [ShoppingListTag]
+    aggregateShoppingListTag(filter: ShoppingListTagFilter): ShoppingListTagAggregateResult
 }
 
 #######################
@@ -1305,7 +1437,13 @@ type Mutation {
     addShoppingListItem(input: [AddShoppingListItemInput!]!): AddShoppingListItemPayload
     updateShoppingListItem(input: UpdateShoppingListItemInput!): UpdateShoppingListItemPayload
     deleteShoppingListItem(filter: ShoppingListItemFilter!): DeleteShoppingListItemPayload
-    addTag(input: [AddTagInput!]!): AddTagPayload
-    updateTag(input: UpdateTagInput!): UpdateTagPayload
-    deleteTag(filter: TagFilter!): DeleteTagPayload
+    addIngredientTag(input: [AddIngredientTagInput!]!): AddIngredientTagPayload
+    updateIngredientTag(input: UpdateIngredientTagInput!): UpdateIngredientTagPayload
+    deleteIngredientTag(filter: IngredientTagFilter!): DeleteIngredientTagPayload
+    addRecipeTag(input: [AddRecipeTagInput!]!): AddRecipeTagPayload
+    updateRecipeTag(input: UpdateRecipeTagInput!): UpdateRecipeTagPayload
+    deleteRecipeTag(filter: RecipeTagFilter!): DeleteRecipeTagPayload
+    addShoppingListTag(input: [AddShoppingListTagInput!]!): AddShoppingListTagPayload
+    updateShoppingListTag(input: UpdateShoppingListTagInput!): UpdateShoppingListTagPayload
+    deleteShoppingListTag(filter: ShoppingListTagFilter!): DeleteShoppingListTagPayload
 }
