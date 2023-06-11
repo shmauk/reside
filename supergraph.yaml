@@ -3,3 +3,7 @@ subgraphs:
     routing_url: http://localhost:8080/graphql
     schema:
       file: ./subgraphs/schema.graphql
+  restocky:
+    routing_url: http://localhost:4001/query
+    schema:
+      file: ./subgraphs/restocky.graphql

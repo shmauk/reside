@@ -7,6 +7,7 @@ type Ingredient {
     name: String! @id
     tags(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
     recipe(filter: RecipeFilter, order: RecipeOrder, first: Int, offset: Int): [Recipe]
+    defaultLocation(filter: StorageLocationFilter): StorageLocation
     tagsAggregate(filter: TagFilter): TagAggregateResult
     recipeAggregate(filter: RecipeFilter): RecipeAggregateResult
 }
@@ -17,13 +18,34 @@ type IngredientStock {
     quantity: Float
     unit: Unit
     isLow: Boolean
+    location(filter: StorageLocationFilter): StorageLocation @hasInverse(field: contents)
+}
+
+type StorageLocation {
+    id: ID!
+    name: String! @id
+    parent(filter: StorageLocationFilter): StorageLocation
+    children(filter: StorageLocationFilter, order: StorageLocationOrder, first: Int, offset: Int): [StorageLocation]
+    storageLevel: StorageLevel
+    contents(filter: IngredientStockFilter, order: IngredientStockOrder, first: Int, offset: Int): [IngredientStock] @hasInverse(field: location)
+    childrenAggregate(filter: StorageLocationFilter): StorageLocationAggregateResult
+    contentsAggregate(filter: IngredientStockFilter): IngredientStockAggregateResult
+}
+
+enum StorageLevel {
+    House
+    Room
+    Cupboard
+    Section
+    Container
 }
 
 type IngredientRequirement {
     id: ID!
     ingredient(filter: IngredientFilter): Ingredient!
-    quantity: Float!
-    unit: Unit!
+    quantity: Float
+    unit: Unit
+    step(filter: StepFilter): Step! @hasInverse(field: ingredients)
 }
 
 type Equipment {
@@ -34,15 +56,17 @@ type Equipment {
 
 type EquipmentRequirement {
     id: ID!
-    ingredient(filter: EquipmentFilter): Equipment!
-    quantity: Float
+    equipment(filter: EquipmentFilter): Equipment!
+    step(filter: StepFilter): Step! @hasInverse(field: equipment)
 }
 
 type Recipe {
     id: ID!
     name: String! @search
+    description: String
     Steps(filter: StepFilter, order: StepOrder, first: Int, offset: Int): [Step] @hasInverse(field: recipe)
     tags(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
+    photo: String
     StepsAggregate(filter: StepFilter): StepAggregateResult
     tagsAggregate(filter: TagFilter): TagAggregateResult
 }
@@ -53,8 +77,8 @@ type Step {
     stepOrder: Int!
     verbose: String!
     terse: String
-    equipment(filter: EquipmentRequirementFilter, order: EquipmentRequirementOrder, first: Int, offset: Int): [EquipmentRequirement]
-    ingredients(filter: IngredientRequirementFilter, order: IngredientRequirementOrder, first: Int, offset: Int): [IngredientRequirement]
+    equipment(filter: EquipmentRequirementFilter, first: Int, offset: Int): [EquipmentRequirement] @hasInverse(field: step)
+    ingredients(filter: IngredientRequirementFilter, order: IngredientRequirementOrder, first: Int, offset: Int): [IngredientRequirement] @hasInverse(field: step)
     recipe(filter: RecipeFilter): Recipe! @hasInverse(field: Steps)
     equipmentAggregate(filter: EquipmentRequirementFilter): EquipmentRequirementAggregateResult
     ingredientsAggregate(filter: IngredientRequirementFilter): IngredientRequirementAggregateResult
@@ -71,7 +95,9 @@ type ShoppingList {
     name: String! @id
     createdDate: String!
     item(filter: ShoppingListItemFilter, first: Int, offset: Int): [ShoppingListItem!]! @hasInverse(field: shoppingList)
+    tags(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
     itemAggregate(filter: ShoppingListItemFilter): ShoppingListItemAggregateResult
+    tagsAggregate(filter: TagFilter): TagAggregateResult
 }
 
 type ShoppingListItem {
@@ -84,13 +110,14 @@ type ShoppingListItem {
 type Tag {
     id: ID!
     name: String! @search
-    type: TagType
+    type: TagType!
 }
 
 enum TagType {
     INGREDIENT
     RECIPE
     SHOPPINGLIST
+    UNIVERSAL
 }
 
 enum Unit {
@@ -378,7 +405,7 @@ type AddEquipmentPayload {
 }
 
 type AddEquipmentRequirementPayload {
-    equipmentRequirement(filter: EquipmentRequirementFilter, order: EquipmentRequirementOrder, first: Int, offset: Int): [EquipmentRequirement]
+    equipmentRequirement(filter: EquipmentRequirementFilter, first: Int, offset: Int): [EquipmentRequirement]
     numUids: Int
 }
 
@@ -417,6 +444,11 @@ type AddStepPayload {
     numUids: Int
 }
 
+type AddStorageLocationPayload {
+    storageLocation(filter: StorageLocationFilter, order: StorageLocationOrder, first: Int, offset: Int): [StorageLocation]
+    numUids: Int
+}
+
 type AddTagPayload {
     tag(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
     numUids: Int
@@ -429,7 +461,7 @@ type DeleteEquipmentPayload {
 }
 
 type DeleteEquipmentRequirementPayload {
-    equipmentRequirement(filter: EquipmentRequirementFilter, order: EquipmentRequirementOrder, first: Int, offset: Int): [EquipmentRequirement]
+    equipmentRequirement(filter: EquipmentRequirementFilter, first: Int, offset: Int): [EquipmentRequirement]
     msg: String
     numUids: Int
 }
@@ -476,6 +508,12 @@ type DeleteStepPayload {
     numUids: Int
 }
 
+type DeleteStorageLocationPayload {
+    storageLocation(filter: StorageLocationFilter, order: StorageLocationOrder, first: Int, offset: Int): [StorageLocation]
+    msg: String
+    numUids: Int
+}
+
 type DeleteTagPayload {
     tag(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
     msg: String
@@ -492,10 +530,6 @@ type EquipmentAggregateResult {
 
 type EquipmentRequirementAggregateResult {
     count: Int
-    quantityMin: Float
-    quantityMax: Float
-    quantitySum: Float
-    quantityAvg: Float
 }
 
 type IngredientAggregateResult {
@@ -524,6 +558,10 @@ type RecipeAggregateResult {
     count: Int
     nameMin: String
     nameMax: String
+    descriptionMin: String
+    descriptionMax: String
+    photoMin: String
+    photoMax: String
 }
 
 type ShoppingListAggregateResult {
@@ -550,6 +588,12 @@ type StepAggregateResult {
     terseMax: String
 }
 
+type StorageLocationAggregateResult {
+    count: Int
+    nameMin: String
+    nameMax: String
+}
+
 type TagAggregateResult {
     count: Int
     nameMin: String
@@ -562,7 +606,7 @@ type UpdateEquipmentPayload {
 }
 
 type UpdateEquipmentRequirementPayload {
-    equipmentRequirement(filter: EquipmentRequirementFilter, order: EquipmentRequirementOrder, first: Int, offset: Int): [EquipmentRequirement]
+    equipmentRequirement(filter: EquipmentRequirementFilter, first: Int, offset: Int): [EquipmentRequirement]
     numUids: Int
 }
 
@@ -601,6 +645,11 @@ type UpdateStepPayload {
     numUids: Int
 }
 
+type UpdateStorageLocationPayload {
+    storageLocation(filter: StorageLocationFilter, order: StorageLocationOrder, first: Int, offset: Int): [StorageLocation]
+    numUids: Int
+}
+
 type UpdateTagPayload {
     tag(filter: TagFilter, order: TagOrder, first: Int, offset: Int): [Tag]
     numUids: Int
@@ -621,18 +670,15 @@ enum EquipmentOrderable {
 }
 
 enum EquipmentRequirementHasFilter {
-    ingredient
-    quantity
-}
-
-enum EquipmentRequirementOrderable {
-    quantity
+    equipment
+    step
 }
 
 enum IngredientHasFilter {
     name
     tags
     recipe
+    defaultLocation
 }
 
 enum IngredientOrderable {
@@ -643,6 +689,7 @@ enum IngredientRequirementHasFilter {
     ingredient
     quantity
     unit
+    step
 }
 
 enum IngredientRequirementOrderable {
@@ -654,6 +701,7 @@ enum IngredientStockHasFilter {
     quantity
     unit
     isLow
+    location
 }
 
 enum IngredientStockOrderable {
@@ -662,18 +710,23 @@ enum IngredientStockOrderable {
 
 enum RecipeHasFilter {
     name
+    description
     Steps
     tags
+    photo
 }
 
 enum RecipeOrderable {
     name
+    description
+    photo
 }
 
 enum ShoppingListHasFilter {
     name
     createdDate
     item
+    tags
 }
 
 enum ShoppingListItemHasFilter {
@@ -703,6 +756,18 @@ enum StepOrderable {
     terse
 }
 
+enum StorageLocationHasFilter {
+    name
+    parent
+    children
+    storageLevel
+    contents
+}
+
+enum StorageLocationOrderable {
+    name
+}
+
 enum TagHasFilter {
     name
     type
@@ -722,20 +787,22 @@ input AddEquipmentInput {
 }
 
 input AddEquipmentRequirementInput {
-    ingredient: EquipmentRef!
-    quantity: Float
+    equipment: EquipmentRef!
+    step: StepRef!
 }
 
 input AddIngredientInput {
     name: String!
     tags: [TagRef]
     recipe: [RecipeRef]
+    defaultLocation: StorageLocationRef
 }
 
 input AddIngredientRequirementInput {
     ingredient: IngredientRef!
-    quantity: Float!
-    unit: Unit!
+    quantity: Float
+    unit: Unit
+    step: StepRef!
 }
 
 input AddIngredientStockInput {
@@ -743,18 +810,22 @@ input AddIngredientStockInput {
     quantity: Float
     unit: Unit
     isLow: Boolean
+    location: StorageLocationRef
 }
 
 input AddRecipeInput {
     name: String!
+    description: String
     Steps: [StepRef]
     tags: [TagRef]
+    photo: String
 }
 
 input AddShoppingListInput {
     name: String!
     createdDate: String!
     item: [ShoppingListItemRef!]!
+    tags: [TagRef]
 }
 
 input AddShoppingListItemInput {
@@ -773,9 +844,17 @@ input AddStepInput {
     recipe: RecipeRef!
 }
 
+input AddStorageLocationInput {
+    name: String!
+    parent: StorageLocationRef
+    children: [StorageLocationRef]
+    storageLevel: StorageLevel
+    contents: [IngredientStockRef]
+}
+
 input AddTagInput {
     name: String!
-    type: TagType
+    type: TagType!
 }
 
 input EquipmentFilter {
@@ -811,21 +890,15 @@ input EquipmentRequirementFilter {
     not: EquipmentRequirementFilter
 }
 
-input EquipmentRequirementOrder {
-    asc: EquipmentRequirementOrderable
-    desc: EquipmentRequirementOrderable
-    then: EquipmentRequirementOrder
-}
-
 input EquipmentRequirementPatch {
-    ingredient: EquipmentRef
-    quantity: Float
+    equipment: EquipmentRef
+    step: StepRef
 }
 
 input EquipmentRequirementRef {
     id: ID
-    ingredient: EquipmentRef
-    quantity: Float
+    equipment: EquipmentRef
+    step: StepRef
 }
 
 input IngredientFilter {
@@ -846,6 +919,7 @@ input IngredientOrder {
 input IngredientPatch {
     tags: [TagRef]
     recipe: [RecipeRef]
+    defaultLocation: StorageLocationRef
 }
 
 input IngredientRef {
@@ -853,6 +927,7 @@ input IngredientRef {
     name: String
     tags: [TagRef]
     recipe: [RecipeRef]
+    defaultLocation: StorageLocationRef
 }
 
 input IngredientRequirementFilter {
@@ -873,6 +948,7 @@ input IngredientRequirementPatch {
     ingredient: IngredientRef
     quantity: Float
     unit: Unit
+    step: StepRef
 }
 
 input IngredientRequirementRef {
@@ -880,6 +956,7 @@ input IngredientRequirementRef {
     ingredient: IngredientRef
     quantity: Float
     unit: Unit
+    step: StepRef
 }
 
 input IngredientStockFilter {
@@ -901,6 +978,7 @@ input IngredientStockPatch {
     quantity: Float
     unit: Unit
     isLow: Boolean
+    location: StorageLocationRef
 }
 
 input IngredientStockRef {
@@ -909,6 +987,7 @@ input IngredientStockRef {
     quantity: Float
     unit: Unit
     isLow: Boolean
+    location: StorageLocationRef
 }
 
 input RecipeFilter {
@@ -928,15 +1007,19 @@ input RecipeOrder {
 
 input RecipePatch {
     name: String
+    description: String
     Steps: [StepRef]
     tags: [TagRef]
+    photo: String
 }
 
 input RecipeRef {
     id: ID
     name: String
+    description: String
     Steps: [StepRef]
     tags: [TagRef]
+    photo: String
 }
 
 input ShoppingListFilter {
@@ -978,6 +1061,7 @@ input ShoppingListOrder {
 input ShoppingListPatch {
     createdDate: String
     item: [ShoppingListItemRef!]
+    tags: [TagRef]
 }
 
 input ShoppingListRef {
@@ -985,6 +1069,7 @@ input ShoppingListRef {
     name: String
     createdDate: String
     item: [ShoppingListItemRef!]
+    tags: [TagRef]
 }
 
 input StepFilter {
@@ -1020,6 +1105,37 @@ input StepRef {
     equipment: [EquipmentRequirementRef]
     ingredients: [IngredientRequirementRef]
     recipe: RecipeRef
+}
+
+input StorageLocationFilter {
+    id: [ID!]
+    name: StringHashFilter
+    has: [StorageLocationHasFilter]
+    and: [StorageLocationFilter]
+    or: [StorageLocationFilter]
+    not: StorageLocationFilter
+}
+
+input StorageLocationOrder {
+    asc: StorageLocationOrderable
+    desc: StorageLocationOrderable
+    then: StorageLocationOrder
+}
+
+input StorageLocationPatch {
+    parent: StorageLocationRef
+    children: [StorageLocationRef]
+    storageLevel: StorageLevel
+    contents: [IngredientStockRef]
+}
+
+input StorageLocationRef {
+    id: ID
+    name: String
+    parent: StorageLocationRef
+    children: [StorageLocationRef]
+    storageLevel: StorageLevel
+    contents: [IngredientStockRef]
 }
 
 input TagFilter {
@@ -1102,6 +1218,12 @@ input UpdateStepInput {
     remove: StepPatch
 }
 
+input UpdateStorageLocationInput {
+    filter: StorageLocationFilter!
+    set: StorageLocationPatch
+    remove: StorageLocationPatch
+}
+
 input UpdateTagInput {
     filter: TagFilter!
     set: TagPatch
@@ -1119,6 +1241,9 @@ type Query {
     getIngredientStock(id: ID!): IngredientStock
     queryIngredientStock(filter: IngredientStockFilter, order: IngredientStockOrder, first: Int, offset: Int): [IngredientStock]
     aggregateIngredientStock(filter: IngredientStockFilter): IngredientStockAggregateResult
+    getStorageLocation(id: ID, name: String): StorageLocation
+    queryStorageLocation(filter: StorageLocationFilter, order: StorageLocationOrder, first: Int, offset: Int): [StorageLocation]
+    aggregateStorageLocation(filter: StorageLocationFilter): StorageLocationAggregateResult
     getIngredientRequirement(id: ID!): IngredientRequirement
     queryIngredientRequirement(filter: IngredientRequirementFilter, order: IngredientRequirementOrder, first: Int, offset: Int): [IngredientRequirement]
     aggregateIngredientRequirement(filter: IngredientRequirementFilter): IngredientRequirementAggregateResult
@@ -1126,7 +1251,7 @@ type Query {
     queryEquipment(filter: EquipmentFilter, order: EquipmentOrder, first: Int, offset: Int): [Equipment]
     aggregateEquipment(filter: EquipmentFilter): EquipmentAggregateResult
     getEquipmentRequirement(id: ID!): EquipmentRequirement
-    queryEquipmentRequirement(filter: EquipmentRequirementFilter, order: EquipmentRequirementOrder, first: Int, offset: Int): [EquipmentRequirement]
+    queryEquipmentRequirement(filter: EquipmentRequirementFilter, first: Int, offset: Int): [EquipmentRequirement]
     aggregateEquipmentRequirement(filter: EquipmentRequirementFilter): EquipmentRequirementAggregateResult
     getRecipe(id: ID!): Recipe
     queryRecipe(filter: RecipeFilter, order: RecipeOrder, first: Int, offset: Int): [Recipe]
@@ -1156,6 +1281,9 @@ type Mutation {
     addIngredientStock(input: [AddIngredientStockInput!]!): AddIngredientStockPayload
     updateIngredientStock(input: UpdateIngredientStockInput!): UpdateIngredientStockPayload
     deleteIngredientStock(filter: IngredientStockFilter!): DeleteIngredientStockPayload
+    addStorageLocation(input: [AddStorageLocationInput!]!, upsert: Boolean): AddStorageLocationPayload
+    updateStorageLocation(input: UpdateStorageLocationInput!): UpdateStorageLocationPayload
+    deleteStorageLocation(filter: StorageLocationFilter!): DeleteStorageLocationPayload
     addIngredientRequirement(input: [AddIngredientRequirementInput!]!): AddIngredientRequirementPayload
     updateIngredientRequirement(input: UpdateIngredientRequirementInput!): UpdateIngredientRequirementPayload
     deleteIngredientRequirement(filter: IngredientRequirementFilter!): DeleteIngredientRequirementPayload

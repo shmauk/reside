@@ -1,0 +1,25 @@
+directive @cacheControl(maxAge: Int!) on QUERY
+directive @cascade(fields: [String]) on FIELD
+
+input ExtShoppingListRef {
+    id: ID
+}
+
+input ExtIngredientRef {
+    id: ID
+    name: String
+}
+
+input ExtTagRef {
+    id: ID
+    name: String
+}
+
+extend type Mutation {
+    shoppingListFromLowStock(shoppingList: ExtShoppingListRef): String
+}
+
+extend type Query {
+    generateQRCode(ingredient: ExtIngredientRef!): String
+    getStockOnHand(tag: [ExtTagRef]): String
+}
